@@ -24,7 +24,6 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
   @override
   void initState() {
     super.initState();
-    FishpondClassifier.instance.init();
 
     _animController = AnimationController(
       vsync: this,
@@ -54,10 +53,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF1D1E33),
-                  const Color(0xFF0A0E21),
-                ],
+                colors: [const Color(0xFF1D1E33), const Color(0xFF0A0E21)],
               ),
               boxShadow: [
                 BoxShadow(
@@ -138,11 +134,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                Icon(icon, color: Colors.white, size: 28),
                 const SizedBox(width: 16),
                 Text(
                   label,
@@ -198,10 +190,10 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
         title: const Text(
           'Pond Health AI',
           style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 20,
-              letterSpacing: 0.5,
-              color: Colors.white
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+            letterSpacing: 0.5,
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
@@ -232,10 +224,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    Colors.cyan.withOpacity(0.1),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.cyan.withOpacity(0.1), Colors.transparent],
                 ),
               ),
             ),
@@ -249,10 +238,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [
-                    Colors.purple.withOpacity(0.08),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.purple.withOpacity(0.08), Colors.transparent],
                 ),
               ),
             ),
@@ -265,9 +251,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                 children: [
                   const SizedBox(height: 20),
                   // Image preview card
-                  Expanded(
-                    child: _buildImageCard(),
-                  ),
+                  Expanded(child: _buildImageCard()),
                   const SizedBox(height: 24),
                   // Result section
                   if (_loading) _buildLoadingIndicator(),
@@ -316,30 +300,27 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
             padding: const EdgeInsets.all(4),
             child: _image != null
                 ? ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(
-                    _image!,
-                    fit: BoxFit.cover,
-                  ),
-                  // Subtle overlay
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withOpacity(0.3),
-                        ],
-                      ),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.file(_image!, fit: BoxFit.cover),
+                        // Subtle overlay
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.3),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            )
+                  )
                 : _buildEmptyState(),
           ),
         ),
@@ -352,10 +333,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
       width: double.infinity,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.cyan.withOpacity(0.3),
-          width: 2,
-        ),
+        border: Border.all(color: Colors.cyan.withOpacity(0.3), width: 2),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -371,11 +349,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                 ],
               ),
             ),
-            child: Icon(
-              Icons.water,
-              size: 64,
-              color: Colors.cyan.shade300,
-            ),
+            child: Icon(Icons.water, size: 64, color: Colors.cyan.shade300),
           ),
           const SizedBox(height: 24),
           Text(
@@ -420,9 +394,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
               height: 48,
               child: CircularProgressIndicator(
                 strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Colors.cyan.shade300,
-                ),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.cyan.shade300),
               ),
             ),
             const SizedBox(height: 16),
@@ -446,31 +418,18 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
-          colors: [
-            Colors.red.withOpacity(0.15),
-            Colors.red.withOpacity(0.05),
-          ],
+          colors: [Colors.red.withOpacity(0.15), Colors.red.withOpacity(0.05)],
         ),
-        border: Border.all(
-          color: Colors.red.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.red.withOpacity(0.3), width: 1),
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.error_outline,
-            color: Colors.red.shade300,
-            size: 28,
-          ),
+          Icon(Icons.error_outline, color: Colors.red.shade300, size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               '$error',
-              style: TextStyle(
-                color: Colors.red.shade200,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.red.shade200, fontSize: 14),
             ),
           ),
         ],
@@ -481,7 +440,9 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
   Widget _buildResultCard(String label, double? score) {
     final isProblem = label == 'problem';
     final statusColor = isProblem ? Colors.red : Colors.green;
-    final statusIcon = isProblem ? Icons.warning_rounded : Icons.check_circle_rounded;
+    final statusIcon = isProblem
+        ? Icons.warning_rounded
+        : Icons.check_circle_rounded;
     final statusText = isProblem ? 'ISSUE DETECTED' : 'HEALTHY';
 
     return FadeTransition(
@@ -498,10 +459,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
               statusColor.withOpacity(0.05),
             ],
           ),
-          border: Border.all(
-            color: statusColor.withOpacity(0.3),
-            width: 2,
-          ),
+          border: Border.all(color: statusColor.withOpacity(0.3), width: 2),
           boxShadow: [
             BoxShadow(
               color: statusColor.withOpacity(0.2),
@@ -518,11 +476,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                 shape: BoxShape.circle,
                 color: statusColor.withOpacity(0.2),
               ),
-              child: Icon(
-                statusIcon,
-                size: 48,
-                color: statusColor.shade300,
-              ),
+              child: Icon(statusIcon, size: 48, color: statusColor.shade300),
             ),
             const SizedBox(height: 20),
             Text(
@@ -577,10 +531,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
-          colors: [
-            Colors.cyan.shade400,
-            Colors.blue.shade600,
-          ],
+          colors: [Colors.cyan.shade400, Colors.blue.shade600],
         ),
         boxShadow: [
           BoxShadow(
