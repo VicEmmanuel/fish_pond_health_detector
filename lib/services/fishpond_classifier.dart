@@ -11,6 +11,8 @@ enum FishpondResizeMode { squash, fitShortest }
 
 enum FishpondInputScalingMode { rawBytes, normalizedZeroToOne }
 
+enum FishpondOutputMode { logits, probabilities }
+
 class FishpondModelConfig {
   const FishpondModelConfig({
     required this.variant,
@@ -18,6 +20,7 @@ class FishpondModelConfig {
     required this.labelsAssetPath,
     required this.resizeMode,
     required this.inputScalingMode,
+    required this.outputMode,
   });
 
   final FishpondModelVariant variant;
@@ -25,6 +28,7 @@ class FishpondModelConfig {
   final String labelsAssetPath;
   final FishpondResizeMode resizeMode;
   final FishpondInputScalingMode inputScalingMode;
+  final FishpondOutputMode outputMode;
 }
 
 class FishpondImagePreprocessor {
@@ -91,6 +95,7 @@ class FishpondClassifier {
       labelsAssetPath: 'assets/edge_impulse/labels.txt',
       resizeMode: FishpondResizeMode.squash,
       inputScalingMode: FishpondInputScalingMode.rawBytes,
+      outputMode: FishpondOutputMode.logits,
     ),
     FishpondModelVariant.edgeImpulseV3: FishpondModelConfig(
       variant: FishpondModelVariant.edgeImpulseV3,
@@ -98,6 +103,7 @@ class FishpondClassifier {
       labelsAssetPath: 'assets/edge_impulse/labels.txt',
       resizeMode: FishpondResizeMode.fitShortest,
       inputScalingMode: FishpondInputScalingMode.normalizedZeroToOne,
+      outputMode: FishpondOutputMode.probabilities,
     ),
   };
 
@@ -237,27 +243,21 @@ class FishpondClassifier {
       ),
     );
 
-    final maxLogit = logits.reduce(math.max);
-    final expValues = logits
-        .map((value) => math.exp(value - maxLogit))
-        .toList();
-    final sumExp = expValues.reduce((a, b) => a + b);
-    final probs = expValues.map((value) => value / sumExp).toList();
-
-    int bestIdx = 0;
-    double bestScore = probs[0];
-    for (int i = 1; i < probs.length; i++) {
-      if (probs[i] > bestScore) {
-        bestScore = probs[i];
-        bestIdx = i;
-      }
-    }
+    final probs = FishpondOutputPostprocessor.toProbabilities(
+      logits,
+      outputMode: config.outputMode,
+    );
+    final decision = FishpondPredictionDecision.evaluate(_labels, probs);
 
     return {
-      'label': _labels[bestIdx],
-      'score': bestScore,
+      'label': decision.label,
+      'predictedLabel': decision.predictedLabel,
+      'score': decision.score,
       'probs': Map.fromIterables(_labels, probs),
       'model': _activeModel?.name,
+      'isUncertain': decision.isUncertain,
+      'topGap': decision.topGap,
+      'reason': decision.reason,
     };
   }
 
@@ -307,5 +307,104 @@ class FishpondClassifier {
       _initialized = false;
     }
     _initFuture = null;
+  }
+}
+
+class FishpondOutputPostprocessor {
+  const FishpondOutputPostprocessor._();
+
+  static List<double> toProbabilities(
+    List<double> values, {
+    required FishpondOutputMode outputMode,
+  }) {
+    switch (outputMode) {
+      case FishpondOutputMode.probabilities:
+        final clipped = values.map((value) => value.clamp(0.0, 1.0)).toList();
+        final hasSignal = clipped.any((value) => value > 0);
+        if (!hasSignal) {
+          return List<double>.filled(values.length, 1 / values.length);
+        }
+        return clipped;
+      case FishpondOutputMode.logits:
+        final maxValue = values.reduce(math.max);
+        final expValues = values
+            .map((value) => math.exp(value - maxValue))
+            .toList();
+        final sumExp = expValues.reduce((a, b) => a + b);
+        return expValues.map((value) => value / sumExp).toList();
+    }
+  }
+}
+
+class FishpondPredictionDecision {
+  const FishpondPredictionDecision({
+    required this.label,
+    required this.predictedLabel,
+    required this.score,
+    required this.isUncertain,
+    required this.topGap,
+    this.reason,
+  });
+
+  final String label;
+  final String predictedLabel;
+  final double score;
+  final bool isUncertain;
+  final double topGap;
+  final String? reason;
+
+  static const double scoreThreshold = 0.85;
+  static const double marginThreshold = 0.20;
+
+  static FishpondPredictionDecision evaluate(
+    List<String> labels,
+    List<double> probs,
+  ) {
+    int bestIdx = 0;
+    int secondIdx = 0;
+
+    for (int i = 1; i < probs.length; i++) {
+      if (probs[i] > probs[bestIdx]) {
+        secondIdx = bestIdx;
+        bestIdx = i;
+      } else if (i != bestIdx &&
+          (secondIdx == bestIdx || probs[i] > probs[secondIdx])) {
+        secondIdx = i;
+      }
+    }
+
+    final bestScore = probs[bestIdx];
+    final secondScore = probs.length > 1 ? probs[secondIdx] : 0.0;
+    final topGap = bestScore - secondScore;
+
+    if (bestScore < scoreThreshold) {
+      return FishpondPredictionDecision(
+        label: 'uncertain',
+        predictedLabel: labels[bestIdx],
+        score: bestScore,
+        isUncertain: true,
+        topGap: topGap,
+        reason: 'Top score below ${(scoreThreshold * 100).toStringAsFixed(0)}%',
+      );
+    }
+
+    if (topGap < marginThreshold) {
+      return FishpondPredictionDecision(
+        label: 'uncertain',
+        predictedLabel: labels[bestIdx],
+        score: bestScore,
+        isUncertain: true,
+        topGap: topGap,
+        reason: 'Classes too close together',
+      );
+    }
+
+    return FishpondPredictionDecision(
+      label: labels[bestIdx],
+      predictedLabel: labels[bestIdx],
+      score: bestScore,
+      isUncertain: false,
+      topGap: topGap,
+    );
   }
 }

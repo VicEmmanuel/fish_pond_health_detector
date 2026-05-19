@@ -178,7 +178,11 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
   @override
   Widget build(BuildContext context) {
     final label = _result?['label'] as String?;
+    final predictedLabel = _result?['predictedLabel'] as String?;
     final score = _result?['score'] as double?;
+    final probs = (_result?['probs'] as Map?)?.cast<String, double>();
+    final isUncertain = _result?['isUncertain'] as bool? ?? false;
+    final reason = _result?['reason'] as String?;
     final error = _result?['error'];
 
     return Scaffold(
@@ -257,7 +261,14 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                   if (_loading) _buildLoadingIndicator(),
                   if (!_loading && error != null) _buildErrorCard(error),
                   if (!_loading && label != null && error == null)
-                    _buildResultCard(label, score),
+                    _buildResultCard(
+                      label: label,
+                      predictedLabel: predictedLabel,
+                      score: score,
+                      probs: probs,
+                      isUncertain: isUncertain,
+                      reason: reason,
+                    ),
                   const SizedBox(height: 24),
                   // Action button
                   _buildActionButton(),
@@ -437,13 +448,26 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
     );
   }
 
-  Widget _buildResultCard(String label, double? score) {
+  Widget _buildResultCard({
+    required String label,
+    required String? predictedLabel,
+    required double? score,
+    required Map<String, double>? probs,
+    required bool isUncertain,
+    required String? reason,
+  }) {
     final isProblem = label == 'problem';
-    final statusColor = isProblem ? Colors.red : Colors.green;
-    final statusIcon = isProblem
-        ? Icons.warning_rounded
-        : Icons.check_circle_rounded;
-    final statusText = isProblem ? 'ISSUE DETECTED' : 'HEALTHY';
+    final statusColor = isUncertain
+        ? Colors.orange
+        : (isProblem ? Colors.red : Colors.green);
+    final statusIcon = isUncertain
+        ? Icons.help_outline_rounded
+        : (isProblem ? Icons.warning_rounded : Icons.check_circle_rounded);
+    final statusText = isUncertain
+        ? 'UNCERTAIN'
+        : (isProblem ? 'ISSUE DETECTED' : 'HEALTHY');
+    final normalScore = probs?['normal'];
+    final problemScore = probs?['problem'];
 
     return FadeTransition(
       opacity: _fadeAnimation,
@@ -488,6 +512,28 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                 letterSpacing: 1.2,
               ),
             ),
+            if (isUncertain && predictedLabel != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Closest match: ${predictedLabel.toUpperCase()}',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.white.withOpacity(0.85),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+            if (reason != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                reason,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withOpacity(0.7),
+                ),
+              ),
+            ],
             if (score != null) ...[
               const SizedBox(height: 12),
               Container(
@@ -509,7 +555,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Confidence: ${(score * 100).toStringAsFixed(1)}%',
+                      '${isUncertain ? 'Top score' : 'Model score'}: ${(score * 100).toStringAsFixed(1)}%',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white.withOpacity(0.9),
@@ -520,9 +566,65 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
                 ),
               ),
             ],
+            if (probs != null) ...[
+              const SizedBox(height: 18),
+              _buildScoreRow(
+                label: 'Normal',
+                value: normalScore ?? 0,
+                color: Colors.greenAccent,
+              ),
+              const SizedBox(height: 10),
+              _buildScoreRow(
+                label: 'Problem',
+                value: problemScore ?? 0,
+                color: Colors.redAccent,
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildScoreRow({
+    required String label,
+    required double value,
+    required Color color,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${(value * 100).toStringAsFixed(1)}%',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: value.clamp(0.0, 1.0),
+            minHeight: 10,
+            backgroundColor: Colors.white.withOpacity(0.08),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
     );
   }
 
