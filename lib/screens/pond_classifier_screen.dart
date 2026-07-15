@@ -192,7 +192,7 @@ class _PondClassifierScreenState extends State<PondClassifierScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'Pond Health AI',
+          'AquaSentry',
           style: TextStyle(
             fontWeight: FontWeight.w600,
             fontSize: 20,

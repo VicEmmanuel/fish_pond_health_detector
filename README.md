@@ -1,4 +1,4 @@
-# Fishpond Health Detector – Mobile App
+# AquaSentry – Fishpond Health Detector Mobile App
 
 Android mobile app that uses an Edge Impulse image classification model to detect **normal** vs **problem** fishpond conditions from images.
 
